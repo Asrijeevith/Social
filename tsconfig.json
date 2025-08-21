@@ -3,6 +3,10 @@
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["**/node_modules", "**/Pods"],
   "compilerOptions": {
-    "typeRoots": ["./node_modules/@types", "./declarations.d.ts"]
+    "typeRoots": ["./node_modules/@types", "./declarations.d.ts"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   }
 }
