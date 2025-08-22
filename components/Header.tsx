@@ -1,28 +1,44 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { User } from '../types';
+import HeaderBar from './HeaderBar';
+import StoriesList from './StoriesList';
 
-export const Header = () => (
-  <View style={styles.header}>
-    <Text style={styles.logo}>Instagram</Text>
-    <View style={styles.icons}>
-      <TouchableOpacity>
-        <Icon name="heart-o" size={24} style={styles.icon} />
-      </TouchableOpacity>
-      <TouchableOpacity>
-        <Icon name="share" size={24} style={styles.icon} />
-      </TouchableOpacity>
-    </View>
-  </View>
-);
+export type StartProgressBarFn = (
+  selectedUser: any,
+  progressBars: React.MutableRefObject<any[]>,
+  userStoryIndex: number,
+  isPaused: boolean,
+  handleTap: (event: any) => void,
+) => void;
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 15,
-  },
-  logo: { fontSize: 26, fontWeight: 'bold', color: '#fff' },
-  icons: { flexDirection: 'row' },
-  icon: { marginHorizontal: 10, color: '#fff' },
-});
+type HeaderProps = {
+  data: User[];
+  setSelectedUser: React.Dispatch<React.SetStateAction<User | null>>;
+  setUserStoryIndex: (index: number) => void;
+  setIsStoryModalVisible: (visible: boolean) => void;
+  progressBars: React.MutableRefObject<any[]>;
+  startProgressBar: StartProgressBarFn;
+};
+
+export default function Header({
+  data,
+  setSelectedUser,
+  setUserStoryIndex,
+  setIsStoryModalVisible,
+  progressBars,
+  startProgressBar,
+}: HeaderProps) {
+  return (
+    <>
+      <HeaderBar />
+      <StoriesList
+        data={data}
+        setSelectedUser={setSelectedUser}
+        setUserStoryIndex={setUserStoryIndex}
+        setIsStoryModalVisible={setIsStoryModalVisible}
+        progressBars={progressBars}
+        startProgressBar={startProgressBar}
+      />
+    </>
+  );
+}
