@@ -7,6 +7,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { restoreToken } from './redux/slices/authSlice';
 import { store } from './redux/store';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 
 const Tab = createBottomTabNavigator();
