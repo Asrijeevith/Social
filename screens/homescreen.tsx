@@ -1,17 +1,17 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, FlatList, StyleSheet, StatusBar, Platform, Text, Button,Animated } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import Header from '../src/Header';
-import StoryItem from '../src/StoryItem';
 import PostItem from '../src/PostItem';
 import StoryModal from '../src/StoryModal';
 
 type RootStackParamList = {
   Login: undefined;
   Home: { token: string };
+  Profile: { token: string };
 };
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -70,10 +70,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route }) => {
     }
   };
 
-  const handlelogout = async () => {
-    await AsyncStorage.removeItem('token');
-    navigation.replace('Login');
-  };
+  
 
   if (loading) {
     return (
@@ -118,9 +115,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route }) => {
         progressBars={progressBars}
         formatTimeAgo={formatTimeAgo}
       />
-      <View style={styles.buttonWrapper}>
-        <Button title="Logout" onPress={handlelogout} />
-      </View>
+
     </View>
   );
 };

@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 type RootStackParamList = {
   Login: undefined;
   Home: { token: string };
+  Profile: { token: string };
 };
 
 // Define the navigation prop type for this screen
