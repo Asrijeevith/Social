@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,54 +15,25 @@ import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { HomeStackParamList } from '../../navigation/HomeStack';
 
-// Define the navigation stack parameters
-type RootStackParamList = {
-  Login: undefined;
-  Home: { token: string };
-};
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../../Redux/slices/authSlice';
 
-// Define the navigation prop type for this screen
-type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
+const LoginScreen = () => {
+  const dispatch = useDispatch();
 
-const LoginScreen: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // New state to handle the initial check for a stored token
-  const [isCheckingToken, setIsCheckingToken] = useState(true);
 
-  const navigation = useNavigation<LoginScreenNavigationProp>();
-
-  // This useEffect hook runs once when the component mounts
-  useEffect(() => {
-    const checkToken = async () => {
-      try {
-        // Check if a token exists in AsyncStorage
-        const token = await AsyncStorage.getItem('token');
-        if (token) {
-          // If token exists, the user is already logged in.
-          // We use 'replace' to prevent the user from navigating back to the Login screen.
-          navigation.replace('Home', { token });
-        }
-      } catch (e) {
-        console.error('Failed to fetch the token from storage', e);
-        // Handle error, maybe show an alert
-        Alert.alert('Error', 'Could not restore session.');
-      } finally {
-        // After checking, set loading to false to show the login form if no token was found
-        setIsCheckingToken(false);
-      }
-    };
-
-    checkToken();
-  }, [navigation]); // The effect depends on the navigation object
+  const navigation =
+    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
 
   const handleLogin = async () => {
-    if (!username || !password) {
+    if (!email || !password) {
       Alert.alert('Error', 'Please enter both username and password');
       return;
     }
@@ -71,37 +42,29 @@ const LoginScreen: React.FC = () => {
     setError(null);
 
     try {
-      const response = await axios.post('http://192.168.0.111:8080/auth/login', {
-        'email': username,
-        'password': password,
-      });
-      const { token } = response.data; // Expecting { token: "jwt-token" }
-      
-      // Store the token persistently upon successful login
-      await AsyncStorage.setItem('token', token); 
-      
+      const response = await axios.post(
+        'http://192.168.0.111:8080/auth/login',
+        {
+          email,
+          password,
+        },
+      );
+
+      const { token } = response.data;
+
+      await AsyncStorage.setItem('token', token);
+      dispatch(loginSuccess(token));
+
       setLoading(false);
-      // Navigate to HomeScreen, replacing the login screen in the stack
-      navigation.replace('Home', { token }); 
     } catch (err: any) {
       setLoading(false);
-      const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
+      const errorMessage =
+        err.response?.data?.message || 'Login failed. Please try again.';
       setError(errorMessage);
       Alert.alert('Login Error', errorMessage);
     }
   };
 
-  // While checking for the token, show a loading indicator
-  if (isCheckingToken) {
-    return (
-      <View style={styles.container}>
-        <StatusBar backgroundColor="#000" barStyle="light-content" />
-        <ActivityIndicator size="large" color="#fff" />
-      </View>
-    );
-  }
-
-  // If no token was found, render the login form
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#000" barStyle="light-content" />
@@ -109,10 +72,10 @@ const LoginScreen: React.FC = () => {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Username"
+          placeholder="Email"
           placeholderTextColor="#888"
-          value={username}
-          onChangeText={setUsername}
+          value={email}
+          onChangeText={setEmail}
           autoCapitalize="none"
         />
         <View style={styles.passwordContainer}>
@@ -136,7 +99,11 @@ const LoginScreen: React.FC = () => {
             />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={handleLogin}
+          disabled={loading}
+        >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
@@ -144,10 +111,22 @@ const LoginScreen: React.FC = () => {
           )}
         </TouchableOpacity>
         {error && <Text style={styles.errorText}>{error}</Text>}
+
+        {/* Signup redirect */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Register')}
+          style={{ marginTop: 20 }}
+        >
+          <Text style={{ color: '#0095f6' }}>
+            Don’t have an account? Sign up
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
+
+export default LoginScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -209,5 +188,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-export default LoginScreen;

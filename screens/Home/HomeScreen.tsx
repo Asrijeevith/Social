@@ -18,76 +18,44 @@ import {
   Button,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { formatTimeAgo } from '../../utils/formatTimeAgo';
+import { useStoriesFeed } from '../../hooks/useStoriesFeed';
+import { logout } from '../../Redux/slices/authSlice';
+import { useDispatch } from 'react-redux';
 
 const screenWidth = Dimensions.get('window').width;
 const storyDuration = 7000;
 
-type RootStackParamList = {
-  Login: undefined;
-  Home: { token: string };
+// A single story item
+type Story = {
+  id: number;
+  media_url: string;
+  media_type: 'image' | 'video'; // restrict since only 2 types exist
+  created_at: string;
+  seen: boolean;
 };
 
+// A user with stories
+type User = {
+  user_id: number; // you showed "1", so it's a number (not string)
+  username: string;
+  profile_pic: string;
+  all_seen: boolean;
+  stories: Story[];
+};
 
-type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
+const HomeScreen = () => {
+  const dispatch = useDispatch();
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ route }) => {
-  const navigation = useNavigation<any>();
-  const [data, setData] = useState([]);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const { data, loading, error } = useStoriesFeed();
+
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userStoryIndex, setUserStoryIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [isStoryModalVisible, setIsStoryModalVisible] = useState(false);
   const [visibleStoryId, setVisibleStoryId] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const progressBars = useRef<any[]>([]);
-
-  // Get token from navigation params or AsyncStorage
-  const { token } = route.params || {};
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const authToken = token || (await AsyncStorage.getItem('token'));
-        if (!authToken) {
-          console.error('No token available');
-          setLoading(false);
-          return;
-        }
-        const res = await axios.get('http://192.168.0.111:8080/stories/feed', {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
-        setData(res.data);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [token]);
-
-  const formatTimeAgo = (createdAt: string): string => {
-  const now = new Date();
-  const storyDate = new Date(createdAt);
-  const diffInMs = now.getTime() - storyDate.getTime();
-  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes}min${diffInMinutes !== 1 ? 's' : ''} ago`;
-  } else if (diffInHours < 24) {
-    return `${diffInHours}hr${diffInHours !== 1 ? 's' : ''} ago`;
-  } else {
-    return `${diffInDays}day${diffInDays !== 1 ? 's' : ''} ago`;
-  }
-};
 
   const startProgressBar = useCallback(() => {
     if (selectedUser && progressBars.current[userStoryIndex]) {
@@ -126,71 +94,93 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route }) => {
     };
   }, [isStoryModalVisible, userStoryIndex, selectedUser, startProgressBar]);
 
- const handleTap = useCallback(
-  (event: any) => {
-    const x = event.nativeEvent.locationX;
-    if (x < screenWidth / 2 && userStoryIndex > 0) {
-      // Go to previous story
-      progressBars.current[userStoryIndex ]?.setValue(0);
-      setUserStoryIndex(userStoryIndex - 1);
-      flatListRef.current?.scrollToIndex({ index: userStoryIndex - 1, animated: false });
-    } else if (x > screenWidth / 2 && userStoryIndex < selectedUser.stories.length - 1) {
-      // Go to next story
-      progressBars.current[userStoryIndex ]?.setValue(1); // Reset next story's progress bar
-      setUserStoryIndex(userStoryIndex + 1);
-      flatListRef.current?.scrollToIndex({ index: userStoryIndex + 1, animated: false});
-    } else if (x > screenWidth / 2 && userStoryIndex === selectedUser.stories.length - 1) {
-      // Move to next user
-      const currentUserIndex = data.findIndex((u: any) => u.user_id === selectedUser.user_id);
-      const nextUser = data[currentUserIndex + 1];
-      if (nextUser) {
-        setSelectedUser(nextUser);
-        setUserStoryIndex(0);
-        progressBars.current = nextUser.stories.map(() => new Animated.Value(0));
-        flatListRef.current?.scrollToIndex({ index: 0, animated: false });
+  const handleTap = useCallback(
+    (event: any) => {
+      const x = event.nativeEvent.locationX;
+      if (x < screenWidth / 2 && userStoryIndex > 0) {
+        // Go to previous story
+        progressBars.current[userStoryIndex]?.setValue(0);
+        setUserStoryIndex(userStoryIndex - 1);
+        flatListRef.current?.scrollToIndex({
+          index: userStoryIndex - 1,
+          animated: false,
+        });
+      } else if (
+        x > screenWidth / 2 &&
+        userStoryIndex < selectedUser.stories.length - 1
+      ) {
+        // Go to next story
+        progressBars.current[userStoryIndex]?.setValue(1); // Reset next story's progress bar
+        setUserStoryIndex(userStoryIndex + 1);
+        flatListRef.current?.scrollToIndex({
+          index: userStoryIndex + 1,
+          animated: false,
+        });
+      } else if (
+        x > screenWidth / 2 &&
+        userStoryIndex === selectedUser.stories.length - 1
+      ) {
+        // Move to next user
+        const currentUserIndex = data.findIndex(
+          (u: any) => u.user_id === selectedUser.user_id,
+        );
+        const nextUser = data[currentUserIndex + 1];
+        if (nextUser) {
+          setSelectedUser(nextUser);
+          setUserStoryIndex(0);
+          progressBars.current = nextUser.stories.map(
+            () => new Animated.Value(0),
+          );
+          flatListRef.current?.scrollToIndex({ index: 0, animated: false });
+        } else {
+          setIsStoryModalVisible(false);
+        }
       } else {
         setIsStoryModalVisible(false);
       }
-    } else {
-      setIsStoryModalVisible(false);
-    }
-  },
-  [userStoryIndex, selectedUser, data]
-);
+    },
+    [userStoryIndex, selectedUser, data],
+  );
 
-  const handlelogout = async () => {
+  const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
-    navigation.replace('Login');
+    dispatch(logout());
   };
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
-    if (viewableItems.length > 0) {
-      setVisibleStoryId(viewableItems[0].item.id);
-      setUserStoryIndex(viewableItems[0].index || 0);
-    }
-  }).current;
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0) {
+        setVisibleStoryId(viewableItems[0].item.id);
+        setUserStoryIndex(viewableItems[0].index || 0);
+      }
+    },
+  ).current;
 
-const renderStory = ({ item }: { item: any }) => (
-  <TouchableOpacity
-    style={styles.story}
-    onPress={() => {
-      setSelectedUser(item);
-      setUserStoryIndex(0);
-      setIsStoryModalVisible(true);
-      progressBars.current = item.stories.map(() => new Animated.Value(0));
-    }}
-  >
-    <View style={[styles.storyContainer, { borderColor: item.all_seen ? '#888' : '#c33052ff' }]}>
-      <Image source={{ uri: item.profile_pic }} style={styles.storyImage} />
-    </View>
-    <View >
-      <Text style={styles.storyName} numberOfLines={1} ellipsizeMode="tail">
-        {item.username}
-      </Text>
-      
-    </View>
-  </TouchableOpacity>
-);
+  const renderStory = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={styles.story}
+      onPress={() => {
+        setSelectedUser(item);
+        setUserStoryIndex(0);
+        setIsStoryModalVisible(true);
+        progressBars.current = item.stories.map(() => new Animated.Value(0));
+      }}
+    >
+      <View
+        style={[
+          styles.storyContainer,
+          { borderColor: item.all_seen ? '#888' : '#c33052ff' },
+        ]}
+      >
+        <Image source={{ uri: item.profile_pic }} style={styles.storyImage} />
+      </View>
+      <View>
+        <Text style={styles.storyName} numberOfLines={1} ellipsizeMode="tail">
+          {item.username}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   const renderPost = ({ item }: { item: any }) => (
     <View style={styles.post}>
@@ -199,7 +189,10 @@ const renderStory = ({ item }: { item: any }) => (
         <Text style={styles.username}>{item.username}</Text>
       </View>
       {item.stories.length > 0 && (
-        <Image source={{ uri: item.stories[0].media_url }} style={styles.postImage} />
+        <Image
+          source={{ uri: item.stories[0].media_url }}
+          style={styles.postImage}
+        />
       )}
       <View style={styles.postActions}>
         <TouchableOpacity>
@@ -264,7 +257,10 @@ const renderStory = ({ item }: { item: any }) => (
         ListHeaderComponent={renderHeader}
       />
       <Modal visible={isStoryModalVisible} animationType="fade" transparent>
-        <TouchableWithoutFeedback onPressIn={pauseProgress} onPressOut={resumeProgress}>
+        <TouchableWithoutFeedback
+          onPressIn={pauseProgress}
+          onPressOut={resumeProgress}
+        >
           <Pressable style={styles.modalContainer} onPress={handleTap}>
             <FlatList
               ref={flatListRef}
@@ -281,39 +277,49 @@ const renderStory = ({ item }: { item: any }) => (
               viewabilityConfig={{ itemVisiblePercentThreshold: 70 }}
               keyExtractor={(item: any) => item.id.toString()}
               renderItem={({ item }: { item: any }) => (
-  <View style={styles.storyContent}>
-    <View style={styles.progressBarContainer}>
-      {selectedUser?.stories.map((_: any, index: number) => (
-        <View
-          key={index}
-          style={[
-            styles.progressBarSegment,
-            { width: `${100 / selectedUser.stories.length}%` },
-          ]}
-        >
-          <Animated.View
-            style={[
-              styles.progressBar,
-              {
-                width: progressBars.current[index]?.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0%', '100%'],
-                }) || '0%',
-              },
-            ]}
-          />
-        </View>
-      ))}
-    </View>
-    <Image source={{ uri: selectedUser?.profile_pic }} style={styles.storyAvatars} />
-    <View style={styles.storyTextContainer}>
-      <Text style={styles.storyUsernames}>{selectedUser?.username}</Text>
-      <Text style={styles.storyTime}>{formatTimeAgo(item.created_at)}</Text>
-    </View>
-    <Image source={{ uri: item.media_url }} style={styles.storyImageModal} />
-    <Icon name="comment" size={24} style={styles.icon2} />
-  </View>
-
+                <View style={styles.storyContent}>
+                  <View style={styles.progressBarContainer}>
+                    {selectedUser?.stories.map((_: any, index: number) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.progressBarSegment,
+                          { width: `${100 / selectedUser.stories.length}%` },
+                        ]}
+                      >
+                        <Animated.View
+                          style={[
+                            styles.progressBar,
+                            {
+                              width:
+                                progressBars.current[index]?.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: ['0%', '100%'],
+                                }) || '0%',
+                            },
+                          ]}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                  <Image
+                    source={{ uri: selectedUser?.profile_pic }}
+                    style={styles.storyAvatars}
+                  />
+                  <View style={styles.storyTextContainer}>
+                    <Text style={styles.storyUsernames}>
+                      {selectedUser?.username}
+                    </Text>
+                    <Text style={styles.storyTime}>
+                      {formatTimeAgo(item.created_at)}
+                    </Text>
+                  </View>
+                  <Image
+                    source={{ uri: item.media_url }}
+                    style={styles.storyImageModal}
+                  />
+                  <Icon name="comment" size={24} style={styles.icon2} />
+                </View>
               )}
             />
             <TouchableOpacity
@@ -326,7 +332,7 @@ const renderStory = ({ item }: { item: any }) => (
         </TouchableWithoutFeedback>
       </Modal>
       <View style={styles.buttonWrapper}>
-        <Button title="Logout" onPress={handlelogout} />
+        <Button title="Logout" onPress={handleLogout} />
       </View>
     </View>
   );
@@ -384,7 +390,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
   },
-   storyName: {
+  storyName: {
     fontSize: 11,
     color: '#fff',
     textAlign: 'center',
@@ -509,9 +515,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 28,
   },
-  
 
-  
   storyTextContainer: {
     position: 'absolute',
     top: 20, // Align with storyAvatars
@@ -531,8 +535,7 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     borderRadius: 20,
-  
-    overflow: "hidden", // ensures button corners match wrapper
+    overflow: 'hidden', // ensures button corners match wrapper
   },
 });
 

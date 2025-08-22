@@ -1,68 +1,50 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import LoginScreen from './screens/loginscreen';
-import HomeScreen from './screens/homescreen';
-import SearchScreen from './screens/searchscreen';
-import Icon from 'react-native-vector-icons/FontAwesome';
+// App.tsx
+import React, { useEffect } from 'react';
+import { Provider, useDispatch } from 'react-redux';
+import { store } from './Redux/store';
+import { StyleSheet, useColorScheme } from 'react-native';
+import RootNavigator from './navigation/RootNavigator';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { restoreToken } from './Redux/slices/authSlice';
 
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+export default function App() {
+  const scheme = useColorScheme();
+  const isDarkMode = scheme === 'dark';
 
-const TabNavigator: React.FC = () => {
+  function AuthInitializer() {
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+      const loadToken = async () => {
+        const token = await AsyncStorage.getItem('token');
+        dispatch(restoreToken(token));
+      };
+      loadToken();
+    }, []);
+
+    return null;
+  }
+
   return (
-    <Tab.Navigator
-      initialRouteName="Home"
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#000',
-          borderTopColor: 'rgba(255, 255, 255, 0.2)',
-        },
-        tabBarActiveTintColor: '#fff',
-        tabBarInactiveTintColor: '#888',
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="home" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="search" color={color} size={size} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+    <Provider store={store}>
+      <SafeAreaProvider>
+        <SafeAreaView
+          style={[
+            styles.container,
+            { backgroundColor: isDarkMode ? '#000' : '#fff' },
+          ]}
+        >
+          <AuthInitializer />
+          <RootNavigator />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </Provider>
   );
-};
+}
 
-const App: React.FC = () => {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Home"
-          component={TabNavigator}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-};
-
-export default App;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
