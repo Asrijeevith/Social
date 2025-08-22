@@ -19,9 +19,10 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import PostItem from '../../src/PostItem';
 import { formatTimeAgo } from '../../utils/formatTimeAgo';
 import { useStoriesFeed } from '../../hooks/useStoriesFeed';
-import { logout } from '../../Redux/slices/authSlice';
+import { logout } from '../../redux/slices/authSlice';
 import { useDispatch } from 'react-redux';
 
 const screenWidth = Dimensions.get('window').width;
@@ -250,15 +251,16 @@ const HomeScreen = () => {
       <FlatList
         data={data}
         keyExtractor={(item: any) => item.user_id.toString()}
-        renderItem={({ item }) => (
-          <PostItem item={item} />
-        )}
+        renderItem={({ item }) => <PostItem item={item} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.postsList}
         ListHeaderComponent={renderHeader}
       />
       <Modal visible={isStoryModalVisible} animationType="fade" transparent>
-        <TouchableWithoutFeedback onPressIn={pauseProgress} onPressOut={resumeProgress}>
+        <TouchableWithoutFeedback
+          onPressIn={pauseProgress}
+          onPressOut={resumeProgress}
+        >
           <Pressable style={styles.modalContainer} onPress={handleTap}>
             <FlatList
               ref={flatListRef}
@@ -275,39 +277,49 @@ const HomeScreen = () => {
               viewabilityConfig={{ itemVisiblePercentThreshold: 70 }}
               keyExtractor={(item: any) => item.id.toString()}
               renderItem={({ item }: { item: any }) => (
-  <View style={styles.storyContent}>
-    <View style={styles.progressBarContainer}>
-      {selectedUser?.stories.map((_: any, index: number) => (
-        <View
-          key={index}
-          style={[
-            styles.progressBarSegment,
-            { width: `${100 / selectedUser.stories.length}%` },
-          ]}
-        >
-          <Animated.View
-            style={[
-              styles.progressBar,
-              {
-                width: progressBars.current[index]?.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0%', '100%'],
-                }) || '0%',
-              },
-            ]}
-          />
-        </View>
-      ))}
-    </View>
-    <Image source={{ uri: selectedUser?.profile_pic }} style={styles.storyAvatars} />
-    <View style={styles.storyTextContainer}>
-      <Text style={styles.storyUsernames}>{selectedUser?.username}</Text>
-      <Text style={styles.storyTime}>{formatTimeAgo(item.created_at)}</Text>
-    </View>
-    <Image source={{ uri: item.media_url }} style={styles.storyImageModal} />
-    <Icon name="comment" size={24} style={styles.icon2} />
-  </View>
-
+                <View style={styles.storyContent}>
+                  <View style={styles.progressBarContainer}>
+                    {selectedUser?.stories.map((_: any, index: number) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.progressBarSegment,
+                          { width: `${100 / selectedUser.stories.length}%` },
+                        ]}
+                      >
+                        <Animated.View
+                          style={[
+                            styles.progressBar,
+                            {
+                              width:
+                                progressBars.current[index]?.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: ['0%', '100%'],
+                                }) || '0%',
+                            },
+                          ]}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                  <Image
+                    source={{ uri: selectedUser?.profile_pic }}
+                    style={styles.storyAvatars}
+                  />
+                  <View style={styles.storyTextContainer}>
+                    <Text style={styles.storyUsernames}>
+                      {selectedUser?.username}
+                    </Text>
+                    <Text style={styles.storyTime}>
+                      {formatTimeAgo(item.created_at)}
+                    </Text>
+                  </View>
+                  <Image
+                    source={{ uri: item.media_url }}
+                    style={styles.storyImageModal}
+                  />
+                  <Icon name="comment" size={24} style={styles.icon2} />
+                </View>
               )}
             />
             <TouchableOpacity

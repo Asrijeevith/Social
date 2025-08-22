@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HomeStackParamList } from '../../navigation/HomeStack';
 
 import { useDispatch } from 'react-redux';
-import { loginSuccess } from '../../Redux/slices/authSlice';
+import { loginSuccess } from '../../redux/slices/authSlice';
 
 const LoginScreen = () => {
   const dispatch = useDispatch();

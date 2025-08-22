@@ -1,12 +1,13 @@
 // App.tsx
 import React, { useEffect } from 'react';
 import { Provider, useDispatch } from 'react-redux';
-import { store } from './Redux/store';
 import { StyleSheet, useColorScheme } from 'react-native';
 import RootNavigator from './navigation/RootNavigator';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { restoreToken } from './Redux/slices/authSlice';
+import { restoreToken } from './redux/slices/authSlice';
+import { store } from './redux/store';
+
 
 export default function App() {
   const scheme = useColorScheme();
