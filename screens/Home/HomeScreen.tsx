@@ -53,7 +53,6 @@ const HomeScreen = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userStoryIndex, setUserStoryIndex] = useState(0);
   const [isStoryModalVisible, setIsStoryModalVisible] = useState(false);
-  const [visibleStoryId, setVisibleStoryId] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const progressBars = useRef<any[]>([]);
 
@@ -251,16 +250,15 @@ const HomeScreen = () => {
       <FlatList
         data={data}
         keyExtractor={(item: any) => item.user_id.toString()}
-        renderItem={renderPost}
+        renderItem={({ item }) => (
+          <PostItem item={item} />
+        )}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.postsList}
         ListHeaderComponent={renderHeader}
       />
       <Modal visible={isStoryModalVisible} animationType="fade" transparent>
-        <TouchableWithoutFeedback
-          onPressIn={pauseProgress}
-          onPressOut={resumeProgress}
-        >
+        <TouchableWithoutFeedback onPressIn={pauseProgress} onPressOut={resumeProgress}>
           <Pressable style={styles.modalContainer} onPress={handleTap}>
             <FlatList
               ref={flatListRef}
@@ -277,49 +275,39 @@ const HomeScreen = () => {
               viewabilityConfig={{ itemVisiblePercentThreshold: 70 }}
               keyExtractor={(item: any) => item.id.toString()}
               renderItem={({ item }: { item: any }) => (
-                <View style={styles.storyContent}>
-                  <View style={styles.progressBarContainer}>
-                    {selectedUser?.stories.map((_: any, index: number) => (
-                      <View
-                        key={index}
-                        style={[
-                          styles.progressBarSegment,
-                          { width: `${100 / selectedUser.stories.length}%` },
-                        ]}
-                      >
-                        <Animated.View
-                          style={[
-                            styles.progressBar,
-                            {
-                              width:
-                                progressBars.current[index]?.interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: ['0%', '100%'],
-                                }) || '0%',
-                            },
-                          ]}
-                        />
-                      </View>
-                    ))}
-                  </View>
-                  <Image
-                    source={{ uri: selectedUser?.profile_pic }}
-                    style={styles.storyAvatars}
-                  />
-                  <View style={styles.storyTextContainer}>
-                    <Text style={styles.storyUsernames}>
-                      {selectedUser?.username}
-                    </Text>
-                    <Text style={styles.storyTime}>
-                      {formatTimeAgo(item.created_at)}
-                    </Text>
-                  </View>
-                  <Image
-                    source={{ uri: item.media_url }}
-                    style={styles.storyImageModal}
-                  />
-                  <Icon name="comment" size={24} style={styles.icon2} />
-                </View>
+  <View style={styles.storyContent}>
+    <View style={styles.progressBarContainer}>
+      {selectedUser?.stories.map((_: any, index: number) => (
+        <View
+          key={index}
+          style={[
+            styles.progressBarSegment,
+            { width: `${100 / selectedUser.stories.length}%` },
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.progressBar,
+              {
+                width: progressBars.current[index]?.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0%', '100%'],
+                }) || '0%',
+              },
+            ]}
+          />
+        </View>
+      ))}
+    </View>
+    <Image source={{ uri: selectedUser?.profile_pic }} style={styles.storyAvatars} />
+    <View style={styles.storyTextContainer}>
+      <Text style={styles.storyUsernames}>{selectedUser?.username}</Text>
+      <Text style={styles.storyTime}>{formatTimeAgo(item.created_at)}</Text>
+    </View>
+    <Image source={{ uri: item.media_url }} style={styles.storyImageModal} />
+    <Icon name="comment" size={24} style={styles.icon2} />
+  </View>
+
               )}
             />
             <TouchableOpacity
@@ -401,53 +389,6 @@ const styles = StyleSheet.create({
   postsList: {
     paddingBottom: 10,
     paddingHorizontal: 0,
-  },
-  post: {
-    marginBottom: 15,
-    backgroundColor: '#000',
-  },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
-  profilePic: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 10,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  username: {
-    fontWeight: '600',
-    fontSize: 14,
-    color: '#fff',
-  },
-  postImage: {
-    width: '100%',
-    height: 375,
-    resizeMode: 'cover',
-  },
-  postActions: {
-    flexDirection: 'row',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
-  likes: {
-    fontWeight: '600',
-    fontSize: 14,
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-    color: '#fff',
-  },
-  caption: {
-    paddingHorizontal: 15,
-    paddingBottom: 10,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#fff',
   },
   loadingText: {
     color: '#fff',
@@ -535,7 +476,7 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     borderRadius: 20,
-    overflow: 'hidden', // ensures button corners match wrapper
+    overflow: 'hidden',
   },
 });
 
