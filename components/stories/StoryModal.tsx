@@ -20,6 +20,7 @@ import { formatTimeAgo } from '../../utils/formatTimeAgo';
 import { User, Story } from '../../types';
 
 import { startProgressBar } from './utils';
+import ProgressBars from './ProgressBars';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -33,7 +34,7 @@ type StoryModalProps = {
   selectedUser: User | null;
   setIsStoryModalVisible: React.Dispatch<React.SetStateAction<boolean>>;
   setUserStoryIndex: (index: number) => void;
-  isPaused: boolean; // <-- add this
+  isPaused: boolean;
 };
 
 export default function StoryModal({
@@ -66,7 +67,7 @@ export default function StoryModal({
       selectedUser,
       progressBars,
       userStoryIndex,
-      false, // not paused
+      false,
       handleTap,
     );
   };
@@ -94,31 +95,11 @@ export default function StoryModal({
             keyExtractor={item => item.id.toString()}
             renderItem={({ item }) => (
               <View style={styles.storyContent}>
-                {/* Progress bars */}
-                <View style={styles.progressBarContainer}>
-                  {selectedUser?.stories.map((_, index: number) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles.progressBarSegment,
-                        { width: `${100 / selectedUser.stories.length}%` },
-                      ]}
-                    >
-                      <Animated.View
-                        style={[
-                          styles.progressBar,
-                          {
-                            width:
-                              progressBars.current[index]?.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: ['0%', '100%'],
-                              }) || '0%',
-                          },
-                        ]}
-                      />
-                    </View>
-                  ))}
-                </View>
+                {/* Progress Bars on the top of the story */}
+                <ProgressBars
+                  selectedUser={selectedUser}
+                  progressBars={progressBars}
+                />
 
                 {/* Avatar + username */}
                 <Image
@@ -169,23 +150,6 @@ const styles = StyleSheet.create({
     width: screenWidth,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  progressBarContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    height: 3,
-    width: '100%',
-    flexDirection: 'row',
-  },
-  progressBarSegment: {
-    height: 3,
-    backgroundColor: '#555',
-    marginHorizontal: 1,
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#fff',
   },
   storyAvatars: {
     position: 'absolute',

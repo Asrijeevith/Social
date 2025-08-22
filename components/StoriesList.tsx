@@ -11,6 +11,7 @@ type StoriesListProps = {
   setIsStoryModalVisible: (visible: boolean) => void;
   progressBars: React.MutableRefObject<any[]>;
   startProgressBar: StartProgressBarFn;
+  handleTap: (event: any) => void; // ✅ added
 };
 
 export default function StoriesList({
@@ -20,6 +21,7 @@ export default function StoriesList({
   setIsStoryModalVisible,
   progressBars,
   startProgressBar,
+  handleTap, // ✅ accept here
 }: StoriesListProps) {
   return (
     <FlatList
@@ -33,6 +35,7 @@ export default function StoriesList({
           setIsStoryModalVisible={setIsStoryModalVisible}
           progressBars={progressBars}
           startProgressBar={startProgressBar}
+          handleTap={handleTap} // ✅ forward it
         />
       )}
       horizontal

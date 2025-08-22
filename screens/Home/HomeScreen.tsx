@@ -275,6 +275,7 @@ const HomeScreen = () => {
             setIsStoryModalVisible={setIsStoryModalVisible}
             progressBars={progressBars}
             startProgressBar={startProgressBar}
+            handleTap={handleTap} // ✅ reuse existing handleTap
           />
         }
       />

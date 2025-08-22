@@ -18,6 +18,7 @@ type HeaderProps = {
   setIsStoryModalVisible: (visible: boolean) => void;
   progressBars: React.MutableRefObject<any[]>;
   startProgressBar: StartProgressBarFn;
+  handleTap: (event: any) => void; // ✅ FIX: added handleTap
 };
 
 export default function Header({
@@ -27,6 +28,7 @@ export default function Header({
   setIsStoryModalVisible,
   progressBars,
   startProgressBar,
+  handleTap, // ✅ Now properly typed
 }: HeaderProps) {
   return (
     <>
@@ -38,6 +40,7 @@ export default function Header({
         setIsStoryModalVisible={setIsStoryModalVisible}
         progressBars={progressBars}
         startProgressBar={startProgressBar}
+        handleTap={handleTap} // ✅ No error now
       />
     </>
   );
