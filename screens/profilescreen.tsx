@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, StatusBar, Platform, Button } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  StatusBar,
+  Platform,
+  Button,
+  Switch,
+} from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,9 +26,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
   const navigation = useNavigation<any>();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isPrivate, setIsPrivate] = useState<boolean>(false);
 
-  // Get token from navigation params or AsyncStorage
   const { token } = route.params || {};
+
+  // Fetch profile data
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
@@ -29,11 +40,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
           setLoading(false);
           return;
         }
-        // Fetch user profile data
+
         const userRes = await axios.get('http://192.168.0.111:8080/auth/me', {
           headers: { Authorization: `Bearer ${authToken}` },
         });
+
         setUserData(userRes.data);
+        setIsPrivate(userRes.data.user?.isPrivate || false);
         console.log('User Data:', userRes.data);
       } catch (err) {
         console.error('Error fetching profile data:', err);
@@ -45,10 +58,37 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
     fetchProfileData();
   }, [token]);
 
+  // Logout
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
     navigation.replace('Login');
   };
+
+  // Toggle Private Account
+  const handleTogglePrivate = async () => {
+  try {
+    const authToken = token || (await AsyncStorage.getItem('token'));
+    if (!authToken) return;
+
+    // Call toggle private API
+    await axios.patch(
+      'http://192.168.0.111:8080/auth/toggle',
+      {},
+      { headers: { Authorization: `Bearer ${authToken}` } }
+    );
+
+    // Fetch updated profile data after toggling
+    const userRes = await axios.get('http://192.168.0.111:8080/auth/me', {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+
+    setUserData(userRes.data);
+    setIsPrivate(userRes.data.user?.isPrivate || false);
+    console.log('Updated User Data:', userRes.data);
+  } catch (err) {
+    console.error('Error toggling private setting:', err);
+  }
+};
 
   if (loading) {
     return (
@@ -64,6 +104,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
       <View style={styles.header}>
         <Text style={styles.username}>{userData?.user.username}</Text>
       </View>
+
       <View style={styles.profileContainer}>
         <View style={styles.profileRow}>
           <View style={styles.profileLeft}>
@@ -73,24 +114,40 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
             />
             <Text style={styles.profileUsername}>{userData?.user.username}</Text>
           </View>
+
           <View style={styles.statsContainer}>
             <View style={styles.stat}>
-              <Text style={styles.statNumber}>{userData?.user.followersCount || 0}</Text>
+              <Text style={styles.statNumber}>
+                {userData?.user.followersCount || 0}
+              </Text>
               <Text style={styles.statLabel}>Followers</Text>
             </View>
             <View style={styles.stat}>
-              <Text style={styles.statNumber}>{userData?.user.followingCount || 0}</Text>
+              <Text style={styles.statNumber}>
+                {userData?.user.followingCount || 0}
+              </Text>
               <Text style={styles.statLabel}>Following</Text>
             </View>
           </View>
         </View>
+
+        {/* Private Account Toggle */}
+<View style={styles.toggleContainer}>
+  <Text style={styles.toggleLabel}>
+    {userData?.user?.type !== 'private' ? 'Private Account' : 'Private Account'}
+  </Text>
+  <Switch
+    value={userData?.user?.type === 'private'}
+    onValueChange={handleTogglePrivate}
+    thumbColor={userData?.user?.type === 'private' ? '#0095f6' : '#f4f3f4'}
+    trackColor={{ false: '#767577', true: '#81b0ff' }}
+  />
+</View>
+
       </View>
+
       <View style={styles.buttonWrapper}>
-        <Button
-          title="Logout"
-          onPress={handleLogout}
-          color="#0095f6"
-        />
+        <Button title="Logout" onPress={handleLogout} color="#0095f6" />
       </View>
     </View>
   );
@@ -172,7 +229,20 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: 15,
     paddingBottom: 10,
-    borderRadius: 25
+    borderRadius: 25,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginVertical: 10,
+  },
+  toggleLabel: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

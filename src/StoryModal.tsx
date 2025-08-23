@@ -100,7 +100,7 @@ const StoryModal: React.FC<StoryModalProps> = ({
           setUserStoryIndex(0);
           // Update progressBars ref with new Animated.Values
           progressBars.current = Array(nextUser.stories.length).fill(null).map(() => new Animated.Value(0));
-          flatListRef.current?.scrollToIndex({ index: 0, animated: true });
+          flatListRef.current?.scrollToIndex({ index: 0, animated: false });
         } else {
           setIsVisible(false);
         }

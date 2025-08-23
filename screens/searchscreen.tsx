@@ -63,40 +63,40 @@ const SearchScreen: React.FC = () => {
   };
 
   const handleFollowToggle = async () => {
-  if (!profile) return;
-  setLoading(true);
+    if (!profile) return;
+    setLoading(true);
 
-  try {
-    const authToken = token || (await AsyncStorage.getItem('token'));
-    if (!authToken) return;
+    try {
+      const authToken = token || (await AsyncStorage.getItem('token'));
+      if (!authToken) return;
 
-    if (profile.isFollowing || profile.isRequested) {
-      // Unfollow or cancel request
-      await axios.delete(
-        `http://192.168.0.111:8080/follow/${profile.id}`,
+      if (profile.isFollowing || profile.isRequested) {
+        // Unfollow or cancel request
+        await axios.delete(
+          `http://192.168.0.111:8080/follow/${profile.id}`,
+          { headers: { Authorization: `Bearer ${authToken}` } }
+        );
+      } else {
+        // Follow (backend decides direct follow or request)
+        await axios.post(
+          `http://192.168.0.111:8080/follow/${profile.id}`,
+          {},
+          { headers: { Authorization: `Bearer ${authToken}` } }
+        );
+      }
+
+      // Fetch fresh profile data by username for live update
+      const res = await axios.get(
+        `http://192.168.0.111:8080/auth/${profile.username}`,
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
-    } else {
-      // Follow (backend decides direct follow or request)
-      await axios.post(
-        `http://192.168.0.111:8080/follow/${profile.id}`,
-        {},
-        { headers: { Authorization: `Bearer ${authToken}` } }
-      );
+      setProfile(res.data.user); // Update profile state
+    } catch (err) {
+      console.log('Follow/Unfollow error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    // Fetch fresh profile data by username for live update
-    const res = await axios.get(
-      `http://192.168.0.111:8080/auth/${profile.username}`,
-      { headers: { Authorization: `Bearer ${authToken}` } }
-    );
-    setProfile(res.data.user); // Update profile state
-  } catch (err) {
-    console.log('Follow/Unfollow error:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
   const renderButton = () => {
@@ -127,7 +127,11 @@ const SearchScreen: React.FC = () => {
             placeholderTextColor="#888"
             value={search}
             onChangeText={setSearch}
+            autoCapitalize="none" 
+            returnKeyType="search" 
+            onSubmitEditing={handleSearch}
           />
+
           <TouchableOpacity style={styles.iconContainer} onPress={handleSearch}>
             <Icon name="search" size={18} color="#fff" />
           </TouchableOpacity>
