@@ -11,6 +11,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import HomeStack from './HomeStack.tsx';
 import SearchStack from './SearchStack.tsx';
+import ProfileStack from './ProfileStack.tsx';
 
 const Tab = createBottomTabNavigator();
 
@@ -45,6 +46,15 @@ export default function MainNavigator() {
           options={{
             tabBarIcon: ({ color, size }) => (
               <Icon name="search" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileStack}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="user" color={color} size={size} />
             ),
           }}
         />
