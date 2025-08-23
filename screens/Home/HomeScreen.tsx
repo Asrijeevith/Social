@@ -194,46 +194,41 @@ import {
   StyleSheet,
   FlatList,
   StatusBar,
-  Platform,
   Dimensions,
-  Button,
   Animated,
+  Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PostItem from '../../components/posts/PostItem';
-import { useStoriesFeed } from '../../hooks/useStoriesFeed';
-import { handleLogout } from '../../utils/auth';
-
 import Header from '../../components/Header';
-
-import { User, Story } from '../../types';
 import StoryModal from '../../components/stories/StoryModal';
 import { startProgressBar } from '../../components/stories/utils';
+import { useStoriesFeed } from '../../hooks/useStoriesFeed';
+import { User, Story } from '../../types';
 
 const screenWidth = Dimensions.get('window').width;
 
 const HomeScreen = () => {
   const { data, loading } = useStoriesFeed();
+  const insets = useSafeAreaInsets();
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userStoryIndex, setUserStoryIndex] = useState(0);
   const [isStoryModalVisible, setIsStoryModalVisible] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
   const flatListRef = useRef<FlatList<Story>>(null);
   const progressBars = useRef<any[]>([]);
 
-  console.log('userStoryIndex');
-  console.log(userStoryIndex);
-
-  const [isPaused, setIsPaused] = useState(false);
-
   const handleTap = useCallback(
     (event: any) => {
+      if (!selectedUser) return;
+
       const x = event.nativeEvent.locationX;
 
       if (x < screenWidth / 2 && userStoryIndex > 0) {
-        // Go to previous story
         progressBars.current[userStoryIndex]?.setValue(0);
         setUserStoryIndex(userStoryIndex - 1);
-        console.log('same user prev story');
         flatListRef.current?.scrollToIndex({
           index: userStoryIndex - 1,
           animated: false,
@@ -242,14 +237,10 @@ const HomeScreen = () => {
         x > screenWidth / 2 &&
         userStoryIndex < selectedUser.stories.length - 1
       ) {
-        // Go to next story
-        // Fill the current bar
         progressBars.current[userStoryIndex]?.setValue(1);
-        // Reset next bar before animating
         progressBars.current[userStoryIndex + 1]?.setValue(0);
 
         setUserStoryIndex(userStoryIndex + 1);
-        console.log('same user next story');
         flatListRef.current?.scrollToIndex({
           index: userStoryIndex + 1,
           animated: false,
@@ -258,38 +249,29 @@ const HomeScreen = () => {
         x > screenWidth / 2 &&
         userStoryIndex === selectedUser.stories.length - 1
       ) {
-        // Move to next user
-        // 👉 Last story of this user → move to next user
         const currentUserIndex = data.findIndex(
-          (u: any) => u.user_id === selectedUser.user_id,
+          (u: any) => u.user_id === selectedUser.user_id
         );
         const nextUser = data[currentUserIndex + 1];
 
         if (nextUser) {
           setSelectedUser(nextUser);
           setUserStoryIndex(0);
-          console.log('new user new story');
 
-          // Reset all bars for the new user
-          progressBars.current = nextUser.stories.map(
-            () => new Animated.Value(0),
-          );
-
+          progressBars.current = nextUser.stories.map(() => new Animated.Value(0));
           flatListRef.current?.scrollToIndex({ index: 0, animated: false });
 
-          // Start first bar fresh
           setTimeout(() => {
             startProgressBar(nextUser, progressBars, 0, isPaused, handleTap);
           }, 0);
         } else {
-          // No more users → close modal
           setIsStoryModalVisible(false);
         }
       } else {
         setIsStoryModalVisible(false);
       }
     },
-    [userStoryIndex, selectedUser, data],
+    [userStoryIndex, selectedUser, data, isPaused]
   );
 
   useEffect(() => {
@@ -299,9 +281,10 @@ const HomeScreen = () => {
         progressBars,
         userStoryIndex,
         isPaused,
-        handleTap,
+        handleTap
       );
     }
+
     return () => {
       progressBars.current.forEach((bar: any) => bar?.stopAnimation());
     };
@@ -309,21 +292,21 @@ const HomeScreen = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <StatusBar backgroundColor="#000" barStyle="light-content" />
       <FlatList
         data={data}
         keyExtractor={(item: any) => item.user_id.toString()}
         renderItem={({ item }) => <PostItem item={item} />}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.postsList}
+        contentContainerStyle={{ paddingBottom: 0 }} // ✅ Remove extra padding
         ListHeaderComponent={
           <Header
             data={data}
@@ -332,11 +315,10 @@ const HomeScreen = () => {
             setIsStoryModalVisible={setIsStoryModalVisible}
             progressBars={progressBars}
             startProgressBar={startProgressBar}
-            handleTap={handleTap} // ✅ reuse existing handleTap
+            handleTap={handleTap}
           />
         }
       />
-      {/* Story Modal */}
       <StoryModal
         setIsPaused={setIsPaused}
         progressBars={progressBars}
@@ -349,10 +331,6 @@ const HomeScreen = () => {
         setUserStoryIndex={setUserStoryIndex}
         isPaused={isPaused}
       />
-
-      <View style={styles.buttonWrapper}>
-        <Button title="Logout" onPress={handleLogout} />
-      </View>
     </View>
   );
 };
@@ -361,11 +339,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === 'android' ? 0:  StatusBar.currentHeight=0,
+   paddingBottom: 20,
   },
   postsList: {
-    paddingBottom: 10,
     paddingHorizontal: 0,
   },
   loadingText: {
@@ -373,10 +350,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 20,
-  },
-  buttonWrapper: {
-    borderRadius: 20,
-    overflow: 'hidden',
   },
 });
 

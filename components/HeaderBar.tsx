@@ -30,14 +30,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingVertical: 0,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255, 255, 255, 0.2)',
   },
   logo: {
     fontSize: 26,
     fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'System',
+    fontFamily: Platform.OS === 'android' ? 'System' : 'System',
     color: '#fff',
   },
   headerIcons: {

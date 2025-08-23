@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
@@ -7,24 +8,42 @@ interface PostItemProps {
 }
 
 const PostItem: React.FC<PostItemProps> = ({ item }) => {
+  const [isLiked, setIsLiked] = useState(false);
+
   return (
     <View style={styles.post}>
       <View style={styles.postHeader}>
         <Image source={{ uri: item.profile_pic }} style={styles.profilePic} />
         <Text style={styles.username}>{item.username}</Text>
+        <TouchableOpacity>
+          <Icon name="ellipsis-v" size={24} style={styles.menu} />
+        </TouchableOpacity>
       </View>
+
       {item.stories.length > 0 && (
         <Image source={{ uri: item.stories[0].media_url }} style={styles.postImage} />
       )}
       <View style={styles.postActions}>
-        <TouchableOpacity>
-          <Icon name="heart-o" size={24} style={styles.icon} />
+        <TouchableOpacity onPress={() => setIsLiked(!isLiked)}>
+          <Icon
+            name={isLiked ? 'heart' : 'heart-o'}
+            size={24}
+            style={[styles.icon, { color: isLiked ? '#ff0000' : '#fff' }]}
+          />
         </TouchableOpacity>
         <TouchableOpacity>
-          <Icon name="comment" size={24} style={styles.icon} />
+          <Icon
+            name="comment"
+            size={24}
+            style={styles.icon}
+          />
         </TouchableOpacity>
-        <TouchableOpacity>
-          <Icon name="share" size={24} style={styles.icon} />
+        <TouchableOpacity >
+          <Icon
+            name="share"
+            size={24}
+            style={styles.icon}
+          />
         </TouchableOpacity>
       </View>
       <Text style={styles.likes}>0 likes</Text>
@@ -54,6 +73,10 @@ const styles = StyleSheet.create({
     marginRight: 10,
     borderWidth: 0.5,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  menu: {
+    color: '#fff',
+    marginLeft: 280,
   },
   username: {
     fontWeight: '600',

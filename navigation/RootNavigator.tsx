@@ -12,6 +12,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import HomeStack from './HomeStack.tsx';
 import SearchStack from './SearchStack.tsx';
 import ProfileStack from './ProfileStack.tsx';
+import AddStack from './AddStack.tsx';
+import RequestStack from './RequestStack.tsx';
 
 const Tab = createBottomTabNavigator();
 
@@ -36,7 +38,7 @@ export default function MainNavigator() {
           component={HomeStack}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <Icon name="home" color={color} size={size} />
+              <Icon name="home" color={color} size={30} />
             ),
           }}
         />
@@ -50,6 +52,24 @@ export default function MainNavigator() {
           }}
         />
         <Tab.Screen
+          name="Add"
+          component={AddStack}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="plus" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Request"
+          component={RequestStack}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="heart" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tab.Screen
           name="Profile"
           component={ProfileStack}
           options={{
@@ -58,6 +78,7 @@ export default function MainNavigator() {
             ),
           }}
         />
+        
       </Tab.Navigator>
     </NavigationContainer>
   );
