@@ -11,7 +11,12 @@ export const startProgressBar = (
   handleTap: (event: any) => void,
 ) => {
   if (selectedUser && progressBars.current[userStoryIndex]) {
+    // 🔴 Stop any running animation first
+    progressBars.current[userStoryIndex].stopAnimation();
+
+    // Reset progress to 0
     progressBars.current[userStoryIndex].setValue(0);
+
     Animated.timing(progressBars.current[userStoryIndex], {
       toValue: 1,
       duration: storyDuration,
@@ -25,89 +30,140 @@ export const startProgressBar = (
   }
 };
 
-// ✅ Factory function to create handleTap with dependencies injected
-export const createHandleTap = ({
-  data,
-  userStoryIndex,
-  setUserStoryIndex,
-  selectedUser,
-  setSelectedUser,
-  flatListRef,
-  progressBars,
-  isPaused,
-  setIsStoryModalVisible,
-}: any) => {
-  return (event: any) => {
-    if (!selectedUser) return;
+// // ✅ Factory function to create handleTap with dependencies injected
+// export const createHandleTap = ({
+//   data,
+//   userStoryIndex,
+//   setUserStoryIndex,
+//   selectedUser,
+//   setSelectedUser,
+//   flatListRef,
+//   progressBars,
+//   isPaused,
+//   setIsStoryModalVisible,
+// }: any) => {
+//   return (event: any) => {
+//     if (!selectedUser) return;
 
-    const x = event.nativeEvent.locationX;
+//     const x = event.nativeEvent.locationX;
 
-    if (x < screenWidth / 2 && userStoryIndex > 0) {
-      // Previous story
-      progressBars.current[userStoryIndex]?.setValue(0);
-      setUserStoryIndex(userStoryIndex - 1);
-      flatListRef.current?.scrollToIndex({
-        index: userStoryIndex - 1,
-        animated: false,
-      });
-    } else if (
-      x > screenWidth / 2 &&
-      userStoryIndex < selectedUser.stories.length - 1
-    ) {
-      // Next story
-      progressBars.current[userStoryIndex]?.setValue(1);
-      progressBars.current[userStoryIndex + 1]?.setValue(0);
+//     // ⬅️ Tap left → previous story
+//     if (x < screenWidth / 2 && userStoryIndex > 0) {
+//       progressBars.current[userStoryIndex]?.stopAnimation();
+//       progressBars.current[userStoryIndex]?.setValue(0);
 
-      setUserStoryIndex(userStoryIndex + 1);
-      flatListRef.current?.scrollToIndex({
-        index: userStoryIndex + 1,
-        animated: false,
-      });
-    } else if (
-      x > screenWidth / 2 &&
-      userStoryIndex === selectedUser.stories.length - 1
-    ) {
-      // Next user
-      const currentUserIndex = data.findIndex(
-        (u: any) => u.user_id === selectedUser.user_id,
-      );
-      const nextUser = data[currentUserIndex + 1];
+//       setUserStoryIndex(userStoryIndex - 1);
+//       flatListRef.current?.scrollToIndex({
+//         index: userStoryIndex - 1,
+//         animated: false,
+//       });
 
-      if (nextUser) {
-        setSelectedUser(nextUser);
-        setUserStoryIndex(0);
+//       startProgressBar(
+//         selectedUser,
+//         progressBars,
+//         userStoryIndex - 1,
+//         isPaused,
+//         createHandleTap({
+//           data,
+//           userStoryIndex: userStoryIndex - 1,
+//           setUserStoryIndex,
+//           selectedUser,
+//           setSelectedUser,
+//           flatListRef,
+//           progressBars,
+//           isPaused,
+//           setIsStoryModalVisible,
+//         }),
+//       );
 
-        progressBars.current = nextUser.stories.map(
-          () => new Animated.Value(0),
-        );
+//       return;
+//     }
 
-        flatListRef.current?.scrollToIndex({ index: 0, animated: false });
+//     // ➡️ Tap right → next story
+//     if (
+//       x > screenWidth / 2 &&
+//       userStoryIndex < selectedUser.stories.length - 1
+//     ) {
+//       progressBars.current[userStoryIndex]?.stopAnimation();
+//       progressBars.current[userStoryIndex]?.setValue(1); // mark as completed
+//       progressBars.current[userStoryIndex + 1]?.setValue(0); // reset next
 
-        setTimeout(() => {
-          startProgressBar(
-            nextUser,
-            progressBars,
-            0,
-            isPaused,
-            createHandleTap({
-              data,
-              userStoryIndex: 0,
-              setUserStoryIndex,
-              selectedUser: nextUser,
-              setSelectedUser,
-              flatListRef,
-              progressBars,
-              isPaused,
-              setIsStoryModalVisible,
-            }),
-          );
-        }, 0);
-      } else {
-        // No more users → close modal
-        setIsStoryModalVisible(false);
-      }
-    } else {
-      setIsStoryModalVisible(false);
-    }
-  };
-};
+//       setUserStoryIndex(userStoryIndex + 1);
+//       flatListRef.current?.scrollToIndex({
+//         index: userStoryIndex + 1,
+//         animated: false,
+//       });
+
+//       startProgressBar(
+//         selectedUser,
+//         progressBars,
+//         userStoryIndex + 1,
+//         isPaused,
+//         createHandleTap({
+//           data,
+//           userStoryIndex: userStoryIndex + 1,
+//           setUserStoryIndex,
+//           selectedUser,
+//           setSelectedUser,
+//           flatListRef,
+//           progressBars,
+//           isPaused,
+//           setIsStoryModalVisible,
+//         }),
+//       );
+
+//       return;
+//     }
+
+//     // ⬅️➡️ If last story → move to next user
+//     if (
+//       x > screenWidth / 2 &&
+//       userStoryIndex === selectedUser.stories.length - 1
+//     ) {
+//       const currentUserIndex = data.findIndex(
+//         (u: any) => u.user_id === selectedUser.user_id,
+//       );
+//       const nextUser = data[currentUserIndex + 1];
+
+//       if (nextUser) {
+//         setSelectedUser(nextUser);
+//         setUserStoryIndex(0);
+
+//         // Reset all bars cleanly
+//         progressBars.current = nextUser.stories.map(
+//           () => new Animated.Value(0),
+//         );
+
+//         flatListRef.current?.scrollToIndex({ index: 0, animated: false });
+
+//         // ✅ restart fresh progress bar
+//         setTimeout(() => {
+//           startProgressBar(
+//             nextUser,
+//             progressBars,
+//             0,
+//             isPaused,
+//             createHandleTap({
+//               data,
+//               userStoryIndex: 0,
+//               setUserStoryIndex,
+//               selectedUser: nextUser,
+//               setSelectedUser,
+//               flatListRef,
+//               progressBars,
+//               isPaused,
+//               setIsStoryModalVisible,
+//             }),
+//           );
+//         }, 50);
+//       } else {
+//         // No more users → close modal
+//         setIsStoryModalVisible(false);
+//       }
+//       return;
+//     }
+
+//     // 👆 Tap anywhere else → close modal
+//     setIsStoryModalVisible(false);
+//   };
+// };

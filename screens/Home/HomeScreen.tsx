@@ -187,7 +187,7 @@
 
 // export default HomeScreen;
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -197,6 +197,7 @@ import {
   Platform,
   Dimensions,
   Button,
+  Animated,
 } from 'react-native';
 import PostItem from '../../components/posts/PostItem';
 import { useStoriesFeed } from '../../hooks/useStoriesFeed';
@@ -206,10 +207,9 @@ import Header from '../../components/Header';
 
 import { User, Story } from '../../types';
 import StoryModal from '../../components/stories/StoryModal';
-import {
-  startProgressBar,
-  createHandleTap,
-} from '../../components/stories/utils';
+import { startProgressBar } from '../../components/stories/utils';
+
+const screenWidth = Dimensions.get('window').width;
 
 const HomeScreen = () => {
   const { data, loading } = useStoriesFeed();
@@ -220,20 +220,77 @@ const HomeScreen = () => {
   const flatListRef = useRef<FlatList<Story>>(null);
   const progressBars = useRef<any[]>([]);
 
+  console.log('userStoryIndex');
+  console.log(userStoryIndex);
+
   const [isPaused, setIsPaused] = useState(false);
 
-  // ✅ Create handleTap from utils (dependency injection)
-  const handleTap = createHandleTap({
-    data,
-    userStoryIndex,
-    setUserStoryIndex,
-    selectedUser,
-    setSelectedUser,
-    flatListRef,
-    progressBars,
-    isPaused,
-    setIsStoryModalVisible,
-  });
+  const handleTap = useCallback(
+    (event: any) => {
+      const x = event.nativeEvent.locationX;
+
+      if (x < screenWidth / 2 && userStoryIndex > 0) {
+        // Go to previous story
+        progressBars.current[userStoryIndex]?.setValue(0);
+        setUserStoryIndex(userStoryIndex - 1);
+        console.log('same user prev story');
+        flatListRef.current?.scrollToIndex({
+          index: userStoryIndex - 1,
+          animated: false,
+        });
+      } else if (
+        x > screenWidth / 2 &&
+        userStoryIndex < selectedUser.stories.length - 1
+      ) {
+        // Go to next story
+        // Fill the current bar
+        progressBars.current[userStoryIndex]?.setValue(1);
+        // Reset next bar before animating
+        progressBars.current[userStoryIndex + 1]?.setValue(0);
+
+        setUserStoryIndex(userStoryIndex + 1);
+        console.log('same user next story');
+        flatListRef.current?.scrollToIndex({
+          index: userStoryIndex + 1,
+          animated: false,
+        });
+      } else if (
+        x > screenWidth / 2 &&
+        userStoryIndex === selectedUser.stories.length - 1
+      ) {
+        // Move to next user
+        // 👉 Last story of this user → move to next user
+        const currentUserIndex = data.findIndex(
+          (u: any) => u.user_id === selectedUser.user_id,
+        );
+        const nextUser = data[currentUserIndex + 1];
+
+        if (nextUser) {
+          setSelectedUser(nextUser);
+          setUserStoryIndex(0);
+          console.log('new user new story');
+
+          // Reset all bars for the new user
+          progressBars.current = nextUser.stories.map(
+            () => new Animated.Value(0),
+          );
+
+          flatListRef.current?.scrollToIndex({ index: 0, animated: false });
+
+          // Start first bar fresh
+          setTimeout(() => {
+            startProgressBar(nextUser, progressBars, 0, isPaused, handleTap);
+          }, 0);
+        } else {
+          // No more users → close modal
+          setIsStoryModalVisible(false);
+        }
+      } else {
+        setIsStoryModalVisible(false);
+      }
+    },
+    [userStoryIndex, selectedUser, data],
+  );
 
   useEffect(() => {
     if (isStoryModalVisible && selectedUser) {
