@@ -37,7 +37,7 @@ export default function MainNavigator() {
           name="Home"
           component={HomeStack}
           options={{
-            tabBarIcon: ({ color, size }) => (
+            tabBarIcon: ({ color }) => (
               <Icon name="home" color={color} size={30} />
             ),
           }}

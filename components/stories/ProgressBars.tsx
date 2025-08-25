@@ -1,4 +1,4 @@
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 import React from 'react';
 import { User } from '../../types';
 

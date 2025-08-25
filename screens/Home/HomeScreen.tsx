@@ -198,7 +198,6 @@ import {
   Animated,
   Platform
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PostItem from '../../components/posts/PostItem';
 import Header from '../../components/Header';
 import StoryModal from '../../components/stories/StoryModal';
@@ -210,7 +209,7 @@ const screenWidth = Dimensions.get('window').width;
 
 const HomeScreen = () => {
   const { data, loading } = useStoriesFeed();
-  const insets = useSafeAreaInsets();
+
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userStoryIndex, setUserStoryIndex] = useState(0);
@@ -292,57 +291,59 @@ const HomeScreen = () => {
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <StatusBar backgroundColor="#000" barStyle="light-content" />
-      <FlatList
-        data={data}
-        keyExtractor={(item: any) => item.user_id.toString()}
-        renderItem={({ item }) => <PostItem item={item} />}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 0 }} // ✅ Remove extra padding
-        ListHeaderComponent={
-          <Header
-            data={data}
-            setSelectedUser={setSelectedUser}
-            setUserStoryIndex={setUserStoryIndex}
-            setIsStoryModalVisible={setIsStoryModalVisible}
-            progressBars={progressBars}
-            startProgressBar={startProgressBar}
-            handleTap={handleTap}
-          />
-        }
-      />
-      <StoryModal
-        setIsPaused={setIsPaused}
-        progressBars={progressBars}
-        userStoryIndex={userStoryIndex}
-        isStoryModalVisible={isStoryModalVisible}
-        handleTap={handleTap}
-        flatListRef={flatListRef}
-        selectedUser={selectedUser}
-        setIsStoryModalVisible={setIsStoryModalVisible}
-        setUserStoryIndex={setUserStoryIndex}
-        isPaused={isPaused}
-      />
-    </View>
+  <View style={styles.container}>
+    <StatusBar backgroundColor="#000" barStyle="light-content" />
+    <FlatList
+      data={data}
+      keyExtractor={(item: any) => item.user_id.toString()}
+      renderItem={({ item }) => <PostItem item={item} />}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.postsList}
+      ListHeaderComponent={
+        <Header
+          data={data}
+          setSelectedUser={setSelectedUser}
+          setUserStoryIndex={setUserStoryIndex}
+          setIsStoryModalVisible={setIsStoryModalVisible}
+          progressBars={progressBars}
+          startProgressBar={startProgressBar}
+          handleTap={handleTap}
+        />
+      }
+    />
+    <StoryModal
+      setIsPaused={setIsPaused}
+      progressBars={progressBars}
+      userStoryIndex={userStoryIndex}
+      isStoryModalVisible={isStoryModalVisible}
+      handleTap={handleTap}
+      flatListRef={flatListRef}
+      selectedUser={selectedUser}
+      setIsStoryModalVisible={setIsStoryModalVisible}
+      setUserStoryIndex={setUserStoryIndex}
+      isPaused={isPaused}
+    />
+  </View>
+
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1,               
     backgroundColor: '#000',
-    paddingTop: Platform.OS === 'android' ? 0:  StatusBar.currentHeight=0,
-   paddingBottom: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+
   },
   postsList: {
+    paddingBottom: 0,   
     paddingHorizontal: 0,
   },
   loadingText: {
@@ -352,5 +353,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
+
 
 export default HomeScreen;

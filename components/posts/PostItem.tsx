@@ -16,7 +16,7 @@ const PostItem: React.FC<PostItemProps> = ({ item }) => {
         <Image source={{ uri: item.profile_pic }} style={styles.profilePic} />
         <Text style={styles.username}>{item.username}</Text>
         <TouchableOpacity>
-          <Icon name="ellipsis-v" size={24} style={styles.menu} />
+          <Icon name="ellipsis-v" size={22} style={styles.menu} />
         </TouchableOpacity>
       </View>
 
@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
   },
   menu: {
     color: '#fff',
-    marginLeft: 280,
+    marginLeft: 270,
   },
   username: {
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 18,
     color: '#fff',
   },
   postImage: {

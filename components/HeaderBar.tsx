@@ -1,5 +1,4 @@
 import {
-  Platform,
   StyleSheet,
   Text,
   View,
@@ -33,11 +32,11 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    
   },
   logo: {
     fontSize: 26,
     fontWeight: 'bold',
-    fontFamily: Platform.OS === 'android' ? 'System' : 'System',
     color: '#fff',
   },
   headerIcons: {
